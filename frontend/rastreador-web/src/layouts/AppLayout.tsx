@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Bell, BellRing, LogOut } from "lucide-react";
+import { Bell, BellRing, LogOut, Menu } from "lucide-react";
 import { Sidebar } from "../components/Sidebar";
 import { FleetDataProvider } from "../context/FleetDataContext";
 import { enablePushNotifications } from "../services/push";
@@ -14,6 +14,7 @@ interface Props {
 
 export function AppLayout({ session, onLogout }: Props) {
   const [pushStatus, setPushStatus] = useState<"idle" | "enabling" | "enabled" | "error">("idle");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleEnablePush = async () => {
     setPushStatus("enabling");
@@ -29,9 +30,16 @@ export function AppLayout({ session, onLogout }: Props) {
   return (
     <FleetDataProvider>
       <div className="app-layout">
-        <Sidebar />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="app-main">
           <header className="topbar">
+            <button
+              className="sidebar-toggle"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <Menu size={22} />
+            </button>
             <p className="topbar-company">{session.companyName}</p>
             <div className="topbar-actions">
               <button
@@ -40,15 +48,17 @@ export function AppLayout({ session, onLogout }: Props) {
                 disabled={pushStatus === "enabling" || pushStatus === "enabled"}
               >
                 {pushStatus === "enabled" ? <BellRing size={16} /> : <Bell size={16} />}
-                {pushStatus === "enabled"
-                  ? "Notificações ativas"
-                  : pushStatus === "enabling"
-                  ? "Ativando..."
-                  : "Ativar notificações"}
+                <span className="topbar-btn-label">
+                  {pushStatus === "enabled"
+                    ? "Notificações ativas"
+                    : pushStatus === "enabling"
+                    ? "Ativando..."
+                    : "Ativar notificações"}
+                </span>
               </button>
               <button className="btn btn-sm" onClick={onLogout}>
                 <LogOut size={16} />
-                Sair
+                <span className="topbar-btn-label">Sair</span>
               </button>
             </div>
           </header>

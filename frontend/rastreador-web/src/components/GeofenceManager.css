@@ -34,6 +34,12 @@
   flex: 1 1 100%;
 }
 
+@media (max-width: 560px) {
+  .bbox-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .checkbox-row {
   display: flex;
   gap: 16px;

@@ -83,6 +83,10 @@ h1, h2, h3 {
   color: #b91c1c;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 table {
   margin-bottom: 0;
   width: 100%;
@@ -166,4 +170,14 @@ button {
 .map-card {
   padding: 0;
   overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 18px;
+  }
+
+  .page-title {
+    font-size: 19px;
+  }
 }

@@ -12,47 +12,49 @@ export function VehicleList({ vehicles, onDelete }: Props) {
   }
 
   return (
-    <table className="vehicle-table">
-      <thead>
-        <tr>
-          <th>Placa</th>
-          <th>Modelo</th>
-          <th>Motorista</th>
-          <th>Origem</th>
-          <th>Ignição</th>
-          <th>Velocidade</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {vehicles.map((v) => (
-          <tr key={v.id}>
-            <td>{v.plate}</td>
-            <td>{v.model}</td>
-            <td>{v.driver}</td>
-            <td>
-              <span className={v.imei ? "badge badge-real" : "badge badge-sim"}>
-                {v.imei ? `Dispositivo real (${v.imei})` : "Simulado"}
-              </span>
-            </td>
-            <td>
-              {v.ignitionOn === null ? (
-                <span className="badge badge-sim">—</span>
-              ) : (
-                <span className={v.ignitionOn ? "badge badge-real" : "badge badge-exit"}>
-                  {v.ignitionOn ? "Ligado" : "Desligado"}
-                </span>
-              )}
-            </td>
-            <td>{v.lastPosition ? `${v.lastPosition.speed} km/h` : "-"}</td>
-            <td>
-              <button className="btn btn-danger btn-sm" onClick={() => onDelete(v.id)}>
-                ✕ Remover
-              </button>
-            </td>
+    <div className="table-scroll">
+      <table className="vehicle-table">
+        <thead>
+          <tr>
+            <th>Placa</th>
+            <th>Modelo</th>
+            <th>Motorista</th>
+            <th>Origem</th>
+            <th>Ignição</th>
+            <th>Velocidade</th>
+            <th></th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {vehicles.map((v) => (
+            <tr key={v.id}>
+              <td>{v.plate}</td>
+              <td>{v.model}</td>
+              <td>{v.driver}</td>
+              <td>
+                <span className={v.imei ? "badge badge-real" : "badge badge-sim"}>
+                  {v.imei ? `Dispositivo real (${v.imei})` : "Simulado"}
+                </span>
+              </td>
+              <td>
+                {v.ignitionOn === null ? (
+                  <span className="badge badge-sim">—</span>
+                ) : (
+                  <span className={v.ignitionOn ? "badge badge-real" : "badge badge-exit"}>
+                    {v.ignitionOn ? "Ligado" : "Desligado"}
+                  </span>
+                )}
+              </td>
+              <td>{v.lastPosition ? `${v.lastPosition.speed} km/h` : "-"}</td>
+              <td>
+                <button className="btn btn-danger btn-sm" onClick={() => onDelete(v.id)}>
+                  ✕ Remover
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

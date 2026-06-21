@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Truck, Map, ShieldAlert, History, Bell } from "lucide-react";
+import { LayoutDashboard, Truck, Map, ShieldAlert, History, Bell, X } from "lucide-react";
 import "./Sidebar.css";
 
 const NAV_ITEMS = [
@@ -11,26 +11,38 @@ const NAV_ITEMS = [
   { to: "/alertas", label: "Alertas", icon: Bell },
 ];
 
-export function Sidebar() {
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ open, onClose }: Props) {
   return (
-    <nav className="sidebar">
-      <div className="sidebar-brand">
-        <span className="sidebar-brand-icon">📍</span>
-        <span className="sidebar-brand-text">Rastreador</span>
-      </div>
-      <ul className="sidebar-nav">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-          <li key={to}>
-            <NavLink
-              to={to}
-              className={({ isActive }) => `sidebar-link${isActive ? " active" : ""}`}
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <>
+      {open && <div className="sidebar-backdrop" onClick={onClose} />}
+      <nav className={`sidebar${open ? " open" : ""}`}>
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-icon">📍</span>
+          <span className="sidebar-brand-text">Rastreador</span>
+          <button className="sidebar-close" onClick={onClose} aria-label="Fechar menu">
+            <X size={20} />
+          </button>
+        </div>
+        <ul className="sidebar-nav">
+          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+            <li key={to}>
+              <NavLink
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) => `sidebar-link${isActive ? " active" : ""}`}
+              >
+                <Icon size={18} />
+                <span>{label}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </>
   );
 }
