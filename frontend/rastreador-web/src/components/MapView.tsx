@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, Marker, Polygon, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Polygon, Polyline, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { createPositionConnection } from "../services/signalr";
 import type { PositionUpdatedEvent, VehicleDto } from "../types/vehicle";
-import type { GeofenceDto } from "../types/geofence";
+import type { GeofenceDto, LatLngDto } from "../types/geofence";
 import "./MapView.css";
 
 interface Props {
   vehicles: VehicleDto[];
   geofences?: GeofenceDto[];
+  historyRoute?: LatLngDto[];
+  historyMarker?: LatLngDto | null;
 }
 
 const vehicleIcon = new L.Icon({
@@ -19,9 +21,17 @@ const vehicleIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
+const historyIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  className: "history-marker-icon",
+});
+
 const DEFAULT_CENTER: [number, number] = [-23.5505, -46.6333];
 
-export function MapView({ vehicles, geofences = [] }: Props) {
+export function MapView({ vehicles, geofences = [], historyRoute = [], historyMarker = null }: Props) {
   const [positions, setPositions] = useState<Record<number, PositionUpdatedEvent>>({});
   const connectionRef = useRef<ReturnType<typeof createPositionConnection> | null>(null);
 
@@ -72,6 +82,17 @@ export function MapView({ vehicles, geofences = [] }: Props) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {markers}
+        {historyRoute.length > 1 && (
+          <Polyline
+            positions={historyRoute.map((p) => [p.lat, p.lng])}
+            pathOptions={{ color: "#f97316", weight: 3 }}
+          />
+        )}
+        {historyMarker && (
+          <Marker position={[historyMarker.lat, historyMarker.lng]} icon={historyIcon}>
+            <Popup>Posição no histórico</Popup>
+          </Marker>
+        )}
         {geofences.map((geofence) => (
           <Polygon
             key={geofence.id}

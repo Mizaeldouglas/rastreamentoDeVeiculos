@@ -1,0 +1,45 @@
+.history-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.history-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 160px;
+}
+
+.history-form .field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-form input,
+.history-form select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.playback-slider {
+  flex: 1 1 200px;
+}
+
+.playback-info {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

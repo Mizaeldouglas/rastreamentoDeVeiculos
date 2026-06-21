@@ -4,3 +4,7 @@
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
 }
+
+.history-marker-icon {
+  filter: hue-rotate(140deg) saturate(1.4);
+}

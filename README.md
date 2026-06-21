@@ -30,7 +30,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 ### WebSocket + API REST
 - [x] Tempo real (SignalR — `PositionUpdated` e `AlertTriggered`)
 - [x] API REST (veículos, geofences, alertas)
-- [ ] Histórico de rotas / playback (os dados já estão na hypertable, falta endpoint de consulta por período + UI de playback)
+- [x] Histórico de rotas / playback (`GET /api/vehicles/{id}/history?from=&to=` + player no painel com play/pause, slider e velocidade)
 
 ### Consumidores
 - [x] Painel web (React + mapa Leaflet, CRUD de veículos, geofences e alertas)
@@ -52,6 +52,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - `VehiclesController` (`/api/vehicles`): CRUD de veículos (`Imei`, `SpeedLimitKmh` opcionais)
   - `GeofencesController` (`/api/geofences`): CRUD de geofences (polígono via lista de pontos `{lat,lng}`)
   - `AlertsController` (`/api/alerts`): lista alertas (`?vehicleId=`) e permite reconhecer (`POST /{id}/ack`)
+  - `GET /api/vehicles/{id}/history?from=&to=`: histórico de posições por período (default últimas 24h, limite de 5000 pontos)
   - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, para suportar volume alto de séries temporais
 - **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas). Útil para testar o `GpsTcpListenerService` sem hardware.
 - **frontend/rastreador-web** — React + Vite + TypeScript
@@ -59,6 +60,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - Mapa (Leaflet/OpenStreetMap) com marcadores em tempo real e geofences desenhadas como polígonos
   - Painel de alertas em tempo real (SignalR) com reconhecimento
   - Gerenciador de geofences (criação via bounding box, listagem, remoção)
+  - Histórico de rotas: busca por veículo/período, com playback animado no mapa (rota desenhada + marcador percorrendo o trajeto)
 
 ## Pré-requisitos
 

@@ -26,8 +26,8 @@ int ackRead = await stream.ReadAsync(ackBuffer);
 Console.WriteLine($"ACK recebido ({ackRead} bytes): {Convert.ToHexString(ackBuffer.AsSpan(0, ackRead))}");
 
 var random = new Random();
-double latitude = -23.5505 + (random.NextDouble() - 0.5) * 0.1;
-double longitude = -46.6333 + (random.NextDouble() - 0.5) * 0.1;
+double latitude = -22.570796574008 + (random.NextDouble() - 0.2) * 0.1;
+double longitude = -47.40573495216076 + (random.NextDouble() - 0.2) * 0.1;
 double heading = random.NextDouble() * 360;
 
 Console.WriteLine("Enviando posições simuladas a cada 3s (Ctrl+C para parar)...");

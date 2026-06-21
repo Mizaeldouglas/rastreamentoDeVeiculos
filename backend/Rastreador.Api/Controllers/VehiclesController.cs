@@ -78,6 +78,32 @@ public class VehiclesController : ControllerBase
         });
     }
 
+    [HttpGet("{id:int}/history")]
+    public async Task<ActionResult<IEnumerable<PositionDto>>> GetHistory(int id, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var exists = await _db.Vehicles.AnyAsync(v => v.Id == id);
+        if (!exists) return NotFound();
+
+        var rangeEnd = to ?? DateTime.UtcNow;
+        var rangeStart = from ?? rangeEnd.AddHours(-24);
+
+        var history = await _db.Positions
+            .Where(p => p.VehicleId == id && p.Timestamp >= rangeStart && p.Timestamp <= rangeEnd)
+            .OrderBy(p => p.Timestamp)
+            .Take(5000)
+            .Select(p => new PositionDto
+            {
+                Latitude = p.Latitude,
+                Longitude = p.Longitude,
+                Speed = p.Speed,
+                Heading = p.Heading,
+                Timestamp = p.Timestamp
+            })
+            .ToListAsync();
+
+        return Ok(history);
+    }
+
     [HttpPost]
     public async Task<ActionResult<VehicleDto>> Create(VehicleCreateDto dto)
     {

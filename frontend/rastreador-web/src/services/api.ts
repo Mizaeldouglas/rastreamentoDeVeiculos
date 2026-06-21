@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { VehicleCreateDto, VehicleDto } from "../types/vehicle";
+import type { PositionDto, VehicleCreateDto, VehicleDto } from "../types/vehicle";
 import type { AlertDto } from "../types/alert";
 import type { GeofenceCreateDto, GeofenceDto } from "../types/geofence";
 
@@ -14,6 +14,10 @@ export const vehiclesApi = {
   update: (id: number, dto: VehicleCreateDto) =>
     client.put(`/api/vehicles/${id}`, dto).then((res) => res.data),
   remove: (id: number) => client.delete(`/api/vehicles/${id}`).then((res) => res.data),
+  history: (id: number, from?: string, to?: string) =>
+    client
+      .get<PositionDto[]>(`/api/vehicles/${id}/history`, { params: { from, to } })
+      .then((res) => res.data),
 };
 
 export const alertsApi = {

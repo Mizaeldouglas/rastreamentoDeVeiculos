@@ -65,9 +65,9 @@ public class GpsSimulatorService : BackgroundService
 
     private (double Latitude, double Longitude, double Speed, double Heading) GenerateNextPosition(Position? last)
     {
-        // Origem padrão: São Paulo, caso o veículo ainda não tenha histórico
-        var baseLat = last?.Latitude ?? -23.5505 + (_random.NextDouble() - 0.5) * 0.1;
-        var baseLng = last?.Longitude ?? -46.6333 + (_random.NextDouble() - 0.5) * 0.1;
+        // Origem padrão: São Paulo, caso o veículo ainda não tenha histórico -22.56379968991351, -47.4097764618967
+        var baseLat = last?.Latitude ?? -22.56379968991351 + (_random.NextDouble() - 0.5) * 0.1;
+        var baseLng = last?.Longitude ?? -47.4097764618967 + (_random.NextDouble() - 0.5) * 0.1;
 
         var heading = last?.Heading ?? _random.NextDouble() * 360;
         // pequena variação de direção a cada tick, simulando curvas suaves

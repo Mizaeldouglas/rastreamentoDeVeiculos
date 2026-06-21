@@ -5,14 +5,17 @@ import { VehicleList } from "./components/VehicleList";
 import { MapView } from "./components/MapView";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { GeofenceManager } from "./components/GeofenceManager";
+import { HistoryPlayback } from "./components/HistoryPlayback";
 import type { VehicleCreateDto, VehicleDto } from "./types/vehicle";
-import type { GeofenceDto } from "./types/geofence";
+import type { GeofenceDto, LatLngDto } from "./types/geofence";
 import "./App.css";
 
 function App() {
   const [vehicles, setVehicles] = useState<VehicleDto[]>([]);
   const [geofences, setGeofences] = useState<GeofenceDto[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [historyRoute, setHistoryRoute] = useState<LatLngDto[]>([]);
+  const [historyMarker, setHistoryMarker] = useState<LatLngDto | null>(null);
 
   const loadVehicles = useCallback(async () => {
     try {
@@ -75,12 +78,28 @@ function App() {
 
       <section className="card map-card">
         <h2 className="section-title">Mapa em tempo real</h2>
-        <MapView vehicles={vehicles} geofences={geofences} />
+        <MapView
+          vehicles={vehicles}
+          geofences={geofences}
+          historyRoute={historyRoute}
+          historyMarker={historyMarker}
+        />
       </section>
 
       <section className="card">
         <h2 className="section-title">Geofences</h2>
         <GeofenceManager vehicles={vehicles} geofences={geofences} onChange={loadGeofences} />
+      </section>
+
+      <section className="card">
+        <h2 className="section-title">Histórico de rotas</h2>
+        <HistoryPlayback
+          vehicles={vehicles}
+          onChange={(route, marker) => {
+            setHistoryRoute(route);
+            setHistoryMarker(marker);
+          }}
+        />
       </section>
 
       <section className="card">
