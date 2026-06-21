@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<Geofence> Geofences => Set<Geofence>();
     public DbSet<Alert> Alerts => Set<Alert>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,5 +79,15 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>
 
         modelBuilder.Entity<Alert>()
             .HasIndex(a => new { a.VehicleId, a.Timestamp });
+
+        modelBuilder.Entity<PushSubscription>()
+            .HasOne(p => p.Company)
+            .WithMany()
+            .HasForeignKey(p => p.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PushSubscription>()
+            .HasIndex(p => p.Endpoint)
+            .IsUnique();
     }
 }

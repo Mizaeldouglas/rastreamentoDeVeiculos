@@ -83,6 +83,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<PushNotificationService>();
 builder.Services.AddScoped<PositionIngestService>();
 builder.Services.AddHostedService<GpsSimulatorService>();
 builder.Services.AddHostedService<GpsTcpListenerService>();

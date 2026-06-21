@@ -54,3 +54,15 @@ export const geofencesApi = {
     client.post<GeofenceDto>("/api/geofences", dto).then((res) => res.data),
   remove: (id: number) => client.delete(`/api/geofences/${id}`).then((res) => res.data),
 };
+
+export interface PushSubscriptionRequest {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+export const pushApi = {
+  getVapidPublicKey: () => client.get<string>("/api/push/vapid-public-key").then((res) => res.data),
+  subscribe: (dto: PushSubscriptionRequest) => client.post("/api/push/subscribe", dto),
+  unsubscribe: (dto: PushSubscriptionRequest) =>
+    client.delete("/api/push/subscribe", { data: dto }),
+};

@@ -8,6 +8,7 @@ import { AlertsPanel } from "./components/AlertsPanel";
 import { GeofenceManager } from "./components/GeofenceManager";
 import { HistoryPlayback } from "./components/HistoryPlayback";
 import { LoginPage } from "./components/LoginPage";
+import { enablePushNotifications } from "./services/push";
 import type { VehicleCreateDto, VehicleDto } from "./types/vehicle";
 import type { GeofenceDto, LatLngDto } from "./types/geofence";
 import type { AuthResponseDto } from "./types/auth";
@@ -19,6 +20,18 @@ function Dashboard({ session, onLogout }: { session: AuthResponseDto; onLogout: 
   const [error, setError] = useState<string | null>(null);
   const [historyRoute, setHistoryRoute] = useState<LatLngDto[]>([]);
   const [historyMarker, setHistoryMarker] = useState<LatLngDto | null>(null);
+  const [pushStatus, setPushStatus] = useState<"idle" | "enabling" | "enabled" | "error">("idle");
+
+  const handleEnablePush = async () => {
+    setPushStatus("enabling");
+    try {
+      await enablePushNotifications();
+      setPushStatus("enabled");
+    } catch (err) {
+      console.error(err);
+      setPushStatus("error");
+    }
+  };
 
   const loadVehicles = useCallback(async () => {
     try {
@@ -67,10 +80,24 @@ function Dashboard({ session, onLogout }: { session: AuthResponseDto; onLogout: 
           <h1>Rastreador Veicular</h1>
           <p className="subtitle">{session.companyName} — Monitoramento em tempo real</p>
         </div>
-        <button className="btn btn-sm" onClick={onLogout}>
-          Sair
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button className="btn btn-sm" onClick={handleEnablePush} disabled={pushStatus === "enabling" || pushStatus === "enabled"}>
+            {pushStatus === "enabled"
+              ? "🔔 Notificações ativas"
+              : pushStatus === "enabling"
+              ? "Ativando..."
+              : "🔔 Ativar notificações"}
+          </button>
+          <button className="btn btn-sm" onClick={onLogout}>
+            Sair
+          </button>
+        </div>
       </header>
+      {pushStatus === "error" && (
+        <div className="alert alert-error">
+          Não foi possível ativar as notificações. Verifique a permissão do navegador.
+        </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
 

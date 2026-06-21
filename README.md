@@ -25,7 +25,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 - [x] Alerta de geofence (entrada/saída de área)
 - [x] Alerta de excesso de velocidade
 - [x] Alerta de ignição (pacote de status GT06 `0x13`, dispara `IgnitionOn`/`IgnitionOff` só na transição de estado)
-- [ ] Push notification real (hoje o alerta é broadcast em tempo real via SignalR para quem está com o painel aberto; falta um canal de push para fora do navegador, ex. mobile/e-mail)
+- [x] Push notification real (**Web Push/VAPID** — notificação do sistema operacional mesmo com a aba em segundo plano ou fechada, sem precisar de app mobile)
 
 ### WebSocket + API REST
 - [x] Tempo real (SignalR — `PositionUpdated` e `AlertTriggered`)
@@ -55,6 +55,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - `GET /api/vehicles/{id}/history?from=&to=`: histórico de posições por período (default últimas 24h, limite de 5000 pontos)
   - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, para suportar volume alto de séries temporais
   - **Multi-tenant**: ASP.NET Core Identity + JWT. `AuthController` (`/api/auth/register`, `/api/auth/login`) cria/autentica usuários vinculados a uma `Company`; todos os outros controllers e o `PositionHub` (via grupos SignalR) filtram automaticamente pelo `CompanyId` da claim do token — cada empresa só vê seus próprios veículos, geofences e alertas
+  - **Push notifications**: `PushController` (`/api/push/vapid-public-key`, `/api/push/subscribe`) + `PushNotificationService` (biblioteca `WebPush`, protocolo VAPID). Toda vez que um alerta é disparado, o `PositionIngestService` também envia uma notificação push para os navegadores inscritos da empresa — falha de entrega (ex. subscription expirada) é capturada e nunca derruba o fluxo principal do alerta
 - **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas + pacotes de status que alternam a ignição a cada ~18s). Útil para testar o `GpsTcpListenerService` sem hardware.
 - **frontend/rastreador-web** — React + Vite + TypeScript
   - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais), com badge de estado de ignição (Ligado/Desligado/—)
@@ -63,6 +64,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - Gerenciador de geofences (criação via bounding box, listagem, remoção)
   - Histórico de rotas: busca por veículo/período, com playback animado no mapa (rota desenhada + marcador percorrendo o trajeto)
   - Tela de login/cadastro de empresa; sessão (JWT) guardada no navegador, com logout
+  - Botão "Ativar notificações" — registra um service worker (`public/sw.js`) e assina o navegador para receber Web Push
 
 ## Pré-requisitos
 
@@ -112,7 +114,12 @@ Abre em `http://localhost:5173`.
 
 1. Abra o frontend e use a tela "Cadastre sua empresa" (nome da empresa + e-mail + senha) — isso cria a empresa e seu primeiro usuário.
 2. Faça login normalmente nas próximas vezes. O token JWT expira em 8h; expirado, a tela de login volta a aparecer automaticamente.
-3. **Atenção**: o `Jwt:Secret` em `appsettings.json` é um valor de desenvolvimento — troque por um segredo forte (variável de ambiente) antes de qualquer deploy real.
+3. **Atenção**: o `Jwt:Secret` e o par de chaves `Vapid` em `appsettings.json` são valores de desenvolvimento — troque por segredos fortes (variável de ambiente) antes de qualquer deploy real.
+
+### Notificações push
+
+1. Clique em "🔔 Ativar notificações" no topo do painel e aceite a permissão do navegador.
+2. A partir daí, qualquer alerta da sua empresa (geofence, velocidade, ignição) chega como notificação do sistema operacional — mesmo com a aba em segundo plano ou fechada.
 
 ### Veículo simulado (sem hardware)
 

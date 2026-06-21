@@ -15,16 +15,19 @@ namespace Rastreador.Api.Services;
 public class PositionIngestService
 {
     private readonly IHubContext<PositionHub> _hubContext;
+    private readonly PushNotificationService _pushService;
     private readonly ILogger<PositionIngestService> _logger;
     private readonly double _defaultSpeedLimitKmh;
     private static readonly GeometryFactory GeometryFactory = new(new PrecisionModel(), 4326);
 
     public PositionIngestService(
         IHubContext<PositionHub> hubContext,
+        PushNotificationService pushService,
         ILogger<PositionIngestService> logger,
         IConfiguration configuration)
     {
         _hubContext = hubContext;
+        _pushService = pushService;
         _logger = logger;
         _defaultSpeedLimitKmh = configuration.GetValue("Alerts:DefaultSpeedLimitKmh", 100.0);
     }
@@ -205,5 +208,15 @@ public class PositionIngestService
             longitude = alert.Longitude,
             timestamp = alert.Timestamp
         }, cancellationToken);
+
+        try
+        {
+            await _pushService.SendToCompanyAsync(
+                db, vehicle.CompanyId, $"{vehicle.Plate}: alerta", message, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao enviar push notification para o alerta do veículo {VehicleId}", vehicle.Id);
+        }
     }
 }
