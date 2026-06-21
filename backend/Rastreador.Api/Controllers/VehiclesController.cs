@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Rastreador.Api.Data;
 using Rastreador.Api.Extensions;
 using Rastreador.Api.Models;
+using Rastreador.Api.Services;
 
 namespace Rastreador.Api.Controllers;
 
@@ -13,10 +14,12 @@ namespace Rastreador.Api.Controllers;
 public class VehiclesController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ExcelReportService _excelReportService;
 
-    public VehiclesController(AppDbContext db)
+    public VehiclesController(AppDbContext db, ExcelReportService excelReportService)
     {
         _db = db;
+        _excelReportService = excelReportService;
     }
 
     [HttpGet]
@@ -112,6 +115,35 @@ public class VehiclesController : ControllerBase
             .ToListAsync();
 
         return Ok(history);
+    }
+
+    [HttpGet("{id:int}/history/report/excel")]
+    public async Task<IActionResult> GetHistoryExcelReport(int id, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var companyId = User.GetCompanyId();
+        var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id && v.CompanyId == companyId);
+        if (vehicle is null) return NotFound();
+
+        var rangeEnd = to ?? DateTime.UtcNow;
+        var rangeStart = from ?? rangeEnd.AddHours(-24);
+
+        var history = await _db.Positions
+            .Where(p => p.VehicleId == id && p.Timestamp >= rangeStart && p.Timestamp <= rangeEnd)
+            .OrderBy(p => p.Timestamp)
+            .Take(5000)
+            .Select(p => new PositionDto
+            {
+                Latitude = p.Latitude,
+                Longitude = p.Longitude,
+                Speed = p.Speed,
+                Heading = p.Heading,
+                Timestamp = p.Timestamp
+            })
+            .ToListAsync();
+
+        var excelBytes = _excelReportService.GenerateHistoryReport(vehicle.Plate, history);
+        return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"historico-{vehicle.Plate}-{rangeStart:yyyyMMdd}-{rangeEnd:yyyyMMdd}.xlsx");
     }
 
     [HttpPost]

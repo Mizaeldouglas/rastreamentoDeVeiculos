@@ -1,4 +1,9 @@
-export type AlertType = "GeofenceEnter" | "GeofenceExit" | "SpeedLimitExceeded";
+export type AlertType =
+  | "GeofenceEnter"
+  | "GeofenceExit"
+  | "SpeedLimitExceeded"
+  | "IgnitionOn"
+  | "IgnitionOff";
 
 export interface AlertDto {
   id: number;

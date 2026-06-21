@@ -29,6 +29,7 @@ export function HistoryPlayback({ vehicles, onChange }: Props) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const route = positions.map((p) => ({ lat: p.latitude, lng: p.longitude }));
@@ -73,6 +74,22 @@ export function HistoryPlayback({ vehicles, onChange }: Props) {
   };
 
   const current = positions[index];
+  const selectedVehicle = vehicles.find((v) => v.id === Number(vehicleId));
+
+  const handleExportExcel = async () => {
+    if (!selectedVehicle) return;
+    setExporting(true);
+    try {
+      await vehiclesApi.downloadHistoryExcel(
+        selectedVehicle.id,
+        selectedVehicle.plate,
+        new Date(from).toISOString(),
+        new Date(to).toISOString()
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div>
@@ -99,6 +116,11 @@ export function HistoryPlayback({ vehicles, onChange }: Props) {
         <button type="submit" className="btn btn-primary" disabled={loading}>
           {loading ? "Buscando..." : "Buscar"}
         </button>
+        {positions.length > 0 && (
+          <button type="button" className="btn btn-sm" onClick={handleExportExcel} disabled={exporting}>
+            {exporting ? "Gerando..." : "📊 Exportar Excel"}
+          </button>
+        )}
       </form>
 
       {positions.length === 0 ? (

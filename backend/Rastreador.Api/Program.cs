@@ -8,6 +8,8 @@ using Rastreador.Api.Hubs;
 using Rastreador.Api.Models;
 using Rastreador.Api.Services;
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 const string FrontendCorsPolicy = "FrontendCors";
@@ -85,6 +87,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<PushNotificationService>();
 builder.Services.AddScoped<PositionIngestService>();
+builder.Services.AddScoped<PdfReportService>();
+builder.Services.AddScoped<ExcelReportService>();
 builder.Services.AddHostedService<GpsSimulatorService>();
 builder.Services.AddHostedService<GpsTcpListenerService>();
 

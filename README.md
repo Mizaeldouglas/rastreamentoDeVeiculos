@@ -35,7 +35,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 ### Consumidores
 - [x] Painel web (React + mapa Leaflet, CRUD de veículos, geofences e alertas)
 - [ ] App mobile (React Native)
-- [ ] Relatórios (PDF/Excel)
+- [x] Relatórios (**PDF** de alertas via QuestPDF, **Excel** de histórico de posições via ClosedXML)
 
 ### Outros (fora do diagrama original, mas relevantes)
 - [x] Autenticação e multi-tenant (login por empresa via JWT, dados isolados por `CompanyId`)
@@ -56,6 +56,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, para suportar volume alto de séries temporais
   - **Multi-tenant**: ASP.NET Core Identity + JWT. `AuthController` (`/api/auth/register`, `/api/auth/login`) cria/autentica usuários vinculados a uma `Company`; todos os outros controllers e o `PositionHub` (via grupos SignalR) filtram automaticamente pelo `CompanyId` da claim do token — cada empresa só vê seus próprios veículos, geofences e alertas
   - **Push notifications**: `PushController` (`/api/push/vapid-public-key`, `/api/push/subscribe`) + `PushNotificationService` (biblioteca `WebPush`, protocolo VAPID). Toda vez que um alerta é disparado, o `PositionIngestService` também envia uma notificação push para os navegadores inscritos da empresa — falha de entrega (ex. subscription expirada) é capturada e nunca derruba o fluxo principal do alerta
+  - **Relatórios**: `GET /api/alerts/report/pdf?from=&to=` (QuestPDF, licença Community) e `GET /api/vehicles/{id}/history/report/excel?from=&to=` (ClosedXML)
 - **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas + pacotes de status que alternam a ignição a cada ~18s). Útil para testar o `GpsTcpListenerService` sem hardware.
 - **frontend/rastreador-web** — React + Vite + TypeScript
   - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais), com badge de estado de ignição (Ligado/Desligado/—)
@@ -65,6 +66,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - Histórico de rotas: busca por veículo/período, com playback animado no mapa (rota desenhada + marcador percorrendo o trajeto)
   - Tela de login/cadastro de empresa; sessão (JWT) guardada no navegador, com logout
   - Botão "Ativar notificações" — registra um service worker (`public/sw.js`) e assina o navegador para receber Web Push
+  - Botões "Exportar PDF" (alertas) e "Exportar Excel" (histórico do veículo selecionado)
 
 ## Pré-requisitos
 

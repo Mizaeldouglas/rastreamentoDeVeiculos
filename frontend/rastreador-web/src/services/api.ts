@@ -27,6 +27,17 @@ client.interceptors.response.use(
   }
 );
 
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export const vehiclesApi = {
   list: () => client.get<VehicleDto[]>("/api/vehicles").then((res) => res.data),
   create: (dto: VehicleCreateDto) =>
@@ -38,6 +49,13 @@ export const vehiclesApi = {
     client
       .get<PositionDto[]>(`/api/vehicles/${id}/history`, { params: { from, to } })
       .then((res) => res.data),
+  downloadHistoryExcel: async (id: number, plate: string, from?: string, to?: string) => {
+    const res = await client.get(`/api/vehicles/${id}/history/report/excel`, {
+      params: { from, to },
+      responseType: "blob",
+    });
+    downloadBlob(res.data, `historico-${plate}.xlsx`);
+  },
 };
 
 export const alertsApi = {
@@ -46,6 +64,13 @@ export const alertsApi = {
       .get<AlertDto[]>("/api/alerts", { params: vehicleId ? { vehicleId } : undefined })
       .then((res) => res.data),
   ack: (id: number) => client.post(`/api/alerts/${id}/ack`).then((res) => res.data),
+  downloadReportPdf: async (from?: string, to?: string) => {
+    const res = await client.get("/api/alerts/report/pdf", {
+      params: { from, to },
+      responseType: "blob",
+    });
+    downloadBlob(res.data, "relatorio-alertas.pdf");
+  },
 };
 
 export const geofencesApi = {
