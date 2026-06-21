@@ -1,0 +1,30 @@
+.vehicle-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.vehicle-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 160px;
+}
+
+.vehicle-form .field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vehicle-form input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vehicle-form .field-actions {
+  flex: 0 0 auto;
+}

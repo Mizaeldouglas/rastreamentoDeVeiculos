@@ -1,0 +1,50 @@
+.vehicle-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vehicle-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.vehicle-table tbody tr {
+  transition: background-color 0.1s ease;
+}
+
+.vehicle-table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.vehicle-table tbody tr:hover {
+  background-color: #eef2ff;
+}
+
+.empty-state {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-real {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-sim {
+  background: #e0e7ff;
+  color: #4338ca;
+}
