@@ -10,6 +10,8 @@ public enum AlertType
 public class Alert
 {
     public int Id { get; set; }
+    public int CompanyId { get; set; }
+    public Company? Company { get; set; }
     public int VehicleId { get; set; }
     public Vehicle? Vehicle { get; set; }
     public AlertType Type { get; set; }

@@ -1,12 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using Rastreador.Api.Data;
+using Rastreador.Api.Extensions;
 using Rastreador.Api.Models;
 
 namespace Rastreador.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/geofences")]
 public class GeofencesController : ControllerBase
 {
@@ -22,7 +25,8 @@ public class GeofencesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GeofenceDto>>> GetAll()
     {
-        var geofences = await _db.Geofences.ToListAsync();
+        var companyId = User.GetCompanyId();
+        var geofences = await _db.Geofences.Where(g => g.CompanyId == companyId).ToListAsync();
         return Ok(geofences.Select(ToDto));
     }
 
@@ -35,10 +39,19 @@ public class GeofencesController : ControllerBase
         if (dto.Points.Count < 3)
             return BadRequest("É necessário ao menos 3 pontos para formar um polígono.");
 
+        var companyId = User.GetCompanyId();
+
+        if (dto.VehicleId is not null)
+        {
+            var ownsVehicle = await _db.Vehicles.AnyAsync(v => v.Id == dto.VehicleId && v.CompanyId == companyId);
+            if (!ownsVehicle) return BadRequest("Veículo não encontrado.");
+        }
+
         var polygon = BuildPolygon(dto.Points);
 
         var geofence = new Geofence
         {
+            CompanyId = companyId,
             Name = dto.Name.Trim(),
             VehicleId = dto.VehicleId,
             Area = polygon,
@@ -55,7 +68,8 @@ public class GeofencesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var geofence = await _db.Geofences.FindAsync(id);
+        var companyId = User.GetCompanyId();
+        var geofence = await _db.Geofences.FirstOrDefaultAsync(g => g.Id == id && g.CompanyId == companyId);
         if (geofence is null) return NotFound();
 
         _db.Geofences.Remove(geofence);

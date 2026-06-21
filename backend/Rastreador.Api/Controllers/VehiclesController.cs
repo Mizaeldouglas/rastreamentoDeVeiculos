@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Rastreador.Api.Data;
+using Rastreador.Api.Extensions;
 using Rastreador.Api.Models;
 
 namespace Rastreador.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/vehicles")]
 public class VehiclesController : ControllerBase
 {
@@ -19,7 +22,10 @@ public class VehiclesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<VehicleDto>>> GetAll()
     {
+        var companyId = User.GetCompanyId();
+
         var vehicles = await _db.Vehicles
+            .Where(v => v.CompanyId == companyId)
             .Select(v => new VehicleDto
             {
                 Id = v.Id,
@@ -49,7 +55,8 @@ public class VehiclesController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<VehicleDto>> GetById(int id)
     {
-        var vehicle = await _db.Vehicles.FindAsync(id);
+        var companyId = User.GetCompanyId();
+        var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id && v.CompanyId == companyId);
         if (vehicle is null) return NotFound();
 
         var lastPosition = await _db.Positions
@@ -81,7 +88,8 @@ public class VehiclesController : ControllerBase
     [HttpGet("{id:int}/history")]
     public async Task<ActionResult<IEnumerable<PositionDto>>> GetHistory(int id, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        var exists = await _db.Vehicles.AnyAsync(v => v.Id == id);
+        var companyId = User.GetCompanyId();
+        var exists = await _db.Vehicles.AnyAsync(v => v.Id == id && v.CompanyId == companyId);
         if (!exists) return NotFound();
 
         var rangeEnd = to ?? DateTime.UtcNow;
@@ -112,6 +120,7 @@ public class VehiclesController : ControllerBase
 
         var vehicle = new Vehicle
         {
+            CompanyId = User.GetCompanyId(),
             Plate = dto.Plate.Trim().ToUpperInvariant(),
             Model = dto.Model.Trim(),
             Driver = dto.Driver.Trim(),
@@ -139,7 +148,8 @@ public class VehiclesController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, VehicleCreateDto dto)
     {
-        var vehicle = await _db.Vehicles.FindAsync(id);
+        var companyId = User.GetCompanyId();
+        var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id && v.CompanyId == companyId);
         if (vehicle is null) return NotFound();
 
         vehicle.Plate = dto.Plate.Trim().ToUpperInvariant();
@@ -155,7 +165,8 @@ public class VehiclesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var vehicle = await _db.Vehicles.FindAsync(id);
+        var companyId = User.GetCompanyId();
+        var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == id && v.CompanyId == companyId);
         if (vehicle is null) return NotFound();
 
         _db.Vehicles.Remove(vehicle);

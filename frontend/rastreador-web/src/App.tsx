@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { geofencesApi, vehiclesApi } from "./services/api";
+import { getSession, logout, onUnauthorized } from "./services/auth";
 import { VehicleForm } from "./components/VehicleForm";
 import { VehicleList } from "./components/VehicleList";
 import { MapView } from "./components/MapView";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { GeofenceManager } from "./components/GeofenceManager";
 import { HistoryPlayback } from "./components/HistoryPlayback";
+import { LoginPage } from "./components/LoginPage";
 import type { VehicleCreateDto, VehicleDto } from "./types/vehicle";
 import type { GeofenceDto, LatLngDto } from "./types/geofence";
+import type { AuthResponseDto } from "./types/auth";
 import "./App.css";
 
-function App() {
+function Dashboard({ session, onLogout }: { session: AuthResponseDto; onLogout: () => void }) {
   const [vehicles, setVehicles] = useState<VehicleDto[]>([]);
   const [geofences, setGeofences] = useState<GeofenceDto[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +63,13 @@ function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <h1>Rastreador Veicular</h1>
-        <p className="subtitle">Monitoramento em tempo real</p>
+        <div>
+          <h1>Rastreador Veicular</h1>
+          <p className="subtitle">{session.companyName} — Monitoramento em tempo real</p>
+        </div>
+        <button className="btn btn-sm" onClick={onLogout}>
+          Sair
+        </button>
       </header>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -108,6 +116,25 @@ function App() {
       </section>
     </div>
   );
+}
+
+function App() {
+  const [session, setSession] = useState<AuthResponseDto | null>(() => getSession());
+
+  useEffect(() => {
+    onUnauthorized(() => setSession(null));
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setSession(null);
+  };
+
+  if (!session) {
+    return <LoginPage onAuthenticated={setSession} />;
+  }
+
+  return <Dashboard session={session} onLogout={handleLogout} />;
 }
 
 export default App;

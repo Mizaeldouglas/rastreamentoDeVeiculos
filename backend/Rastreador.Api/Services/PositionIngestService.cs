@@ -39,6 +39,9 @@ public class PositionIngestService
         DateTime timestampUtc,
         CancellationToken cancellationToken)
     {
+        var vehicle = await db.Vehicles.FindAsync([vehicleId], cancellationToken);
+        if (vehicle is null) return;
+
         var previousPosition = await db.Positions
             .Where(p => p.VehicleId == vehicleId)
             .OrderByDescending(p => p.Timestamp)
@@ -57,7 +60,9 @@ public class PositionIngestService
         db.Positions.Add(position);
         await db.SaveChangesAsync(cancellationToken);
 
-        await _hubContext.Clients.All.SendAsync("PositionUpdated", new
+        var companyGroup = PositionHub.CompanyGroup(vehicle.CompanyId);
+
+        await _hubContext.Clients.Group(companyGroup).SendAsync("PositionUpdated", new
         {
             vehicleId = position.VehicleId,
             latitude = position.Latitude,
@@ -67,31 +72,30 @@ public class PositionIngestService
             timestamp = position.Timestamp
         }, cancellationToken);
 
-        await EvaluateEventsAsync(db, vehicleId, previousPosition, position, cancellationToken);
+        await EvaluateEventsAsync(db, vehicle, previousPosition, position, companyGroup, cancellationToken);
     }
 
     private async Task EvaluateEventsAsync(
         AppDbContext db,
-        int vehicleId,
+        Vehicle vehicle,
         Position? previousPosition,
         Position position,
+        string companyGroup,
         CancellationToken cancellationToken)
     {
-        var vehicle = await db.Vehicles.FindAsync([vehicleId], cancellationToken);
-        if (vehicle is null) return;
-
-        await CheckSpeedLimitAsync(db, vehicle, position, cancellationToken);
-        await CheckGeofencesAsync(db, vehicle, previousPosition, position, cancellationToken);
+        await CheckSpeedLimitAsync(db, vehicle, position, companyGroup, cancellationToken);
+        await CheckGeofencesAsync(db, vehicle, previousPosition, position, companyGroup, cancellationToken);
     }
 
-    private async Task CheckSpeedLimitAsync(AppDbContext db, Vehicle vehicle, Position position, CancellationToken cancellationToken)
+    private async Task CheckSpeedLimitAsync(
+        AppDbContext db, Vehicle vehicle, Position position, string companyGroup, CancellationToken cancellationToken)
     {
         var limit = vehicle.SpeedLimitKmh ?? _defaultSpeedLimitKmh;
         if (position.Speed <= limit) return;
 
-        await RaiseAlertAsync(db, vehicle.Id, AlertType.SpeedLimitExceeded,
+        await RaiseAlertAsync(db, vehicle, AlertType.SpeedLimitExceeded,
             $"Velocidade de {position.Speed:F1} km/h excede o limite de {limit:F1} km/h",
-            position, cancellationToken);
+            position, companyGroup, cancellationToken);
     }
 
     private async Task CheckGeofencesAsync(
@@ -99,10 +103,11 @@ public class PositionIngestService
         Vehicle vehicle,
         Position? previousPosition,
         Position position,
+        string companyGroup,
         CancellationToken cancellationToken)
     {
         var geofences = await db.Geofences
-            .Where(g => g.VehicleId == null || g.VehicleId == vehicle.Id)
+            .Where(g => g.CompanyId == vehicle.CompanyId && (g.VehicleId == null || g.VehicleId == vehicle.Id))
             .ToListAsync(cancellationToken);
 
         if (geofences.Count == 0) return;
@@ -119,28 +124,30 @@ public class PositionIngestService
 
             if (isInside && !wasInside && geofence.AlertOnEnter)
             {
-                await RaiseAlertAsync(db, vehicle.Id, AlertType.GeofenceEnter,
-                    $"Veículo entrou na área \"{geofence.Name}\"", position, cancellationToken);
+                await RaiseAlertAsync(db, vehicle, AlertType.GeofenceEnter,
+                    $"Veículo entrou na área \"{geofence.Name}\"", position, companyGroup, cancellationToken);
             }
             else if (!isInside && wasInside && geofence.AlertOnExit)
             {
-                await RaiseAlertAsync(db, vehicle.Id, AlertType.GeofenceExit,
-                    $"Veículo saiu da área \"{geofence.Name}\"", position, cancellationToken);
+                await RaiseAlertAsync(db, vehicle, AlertType.GeofenceExit,
+                    $"Veículo saiu da área \"{geofence.Name}\"", position, companyGroup, cancellationToken);
             }
         }
     }
 
     private async Task RaiseAlertAsync(
         AppDbContext db,
-        int vehicleId,
+        Vehicle vehicle,
         AlertType type,
         string message,
         Position position,
+        string companyGroup,
         CancellationToken cancellationToken)
     {
         var alert = new Alert
         {
-            VehicleId = vehicleId,
+            CompanyId = vehicle.CompanyId,
+            VehicleId = vehicle.Id,
             Type = type,
             Message = message,
             Latitude = position.Latitude,
@@ -151,9 +158,9 @@ public class PositionIngestService
         db.Alerts.Add(alert);
         await db.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Alerta disparado — veículo {VehicleId}: {Message}", vehicleId, message);
+        _logger.LogInformation("Alerta disparado — veículo {VehicleId}: {Message}", vehicle.Id, message);
 
-        await _hubContext.Clients.All.SendAsync("AlertTriggered", new
+        await _hubContext.Clients.Group(companyGroup).SendAsync("AlertTriggered", new
         {
             id = alert.Id,
             vehicleId = alert.VehicleId,

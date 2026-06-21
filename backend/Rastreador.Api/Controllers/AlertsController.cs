@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Rastreador.Api.Data;
+using Rastreador.Api.Extensions;
 using Rastreador.Api.Models;
 
 namespace Rastreador.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/alerts")]
 public class AlertsController : ControllerBase
 {
@@ -19,7 +22,8 @@ public class AlertsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AlertDto>>> GetAll([FromQuery] int? vehicleId)
     {
-        var query = _db.Alerts.AsQueryable();
+        var companyId = User.GetCompanyId();
+        var query = _db.Alerts.Where(a => a.CompanyId == companyId);
         if (vehicleId is not null)
             query = query.Where(a => a.VehicleId == vehicleId);
 
@@ -45,7 +49,8 @@ public class AlertsController : ControllerBase
     [HttpPost("{id:int}/ack")]
     public async Task<IActionResult> Acknowledge(int id)
     {
-        var alert = await _db.Alerts.FindAsync(id);
+        var companyId = User.GetCompanyId();
+        var alert = await _db.Alerts.FirstOrDefaultAsync(a => a.Id == id && a.CompanyId == companyId);
         if (alert is null) return NotFound();
 
         alert.Acknowledged = true;

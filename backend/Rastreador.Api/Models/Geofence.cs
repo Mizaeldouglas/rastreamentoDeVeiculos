@@ -5,9 +5,11 @@ namespace Rastreador.Api.Models;
 public class Geofence
 {
     public int Id { get; set; }
+    public int CompanyId { get; set; }
+    public Company? Company { get; set; }
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Null = aplica a todos os veículos.</summary>
+    /// <summary>Null = aplica a todos os veículos da empresa.</summary>
     public int? VehicleId { get; set; }
     public Vehicle? Vehicle { get; set; }
 

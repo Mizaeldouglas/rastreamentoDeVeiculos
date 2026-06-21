@@ -1,11 +1,31 @@
 import axios from "axios";
+import { API_BASE_URL } from "./config";
+import { getToken, triggerUnauthorized } from "./auth";
 import type { PositionDto, VehicleCreateDto, VehicleDto } from "../types/vehicle";
 import type { AlertDto } from "../types/alert";
 import type { GeofenceCreateDto, GeofenceDto } from "../types/geofence";
 
-export const API_BASE_URL = "http://localhost:5000";
+export { API_BASE_URL };
 
 const client = axios.create({ baseURL: API_BASE_URL });
+
+client.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      triggerUnauthorized();
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const vehiclesApi = {
   list: () => client.get<VehicleDto[]>("/api/vehicles").then((res) => res.data),

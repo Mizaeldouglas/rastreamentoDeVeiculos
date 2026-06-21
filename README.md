@@ -38,7 +38,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 - [ ] Relatórios (PDF/Excel)
 
 ### Outros (fora do diagrama original, mas relevantes)
-- [ ] Autenticação e multiusuário
+- [x] Autenticação e multi-tenant (login por empresa via JWT, dados isolados por `CompanyId`)
 - [ ] Testes automatizados
 
 ## Arquitetura
@@ -54,6 +54,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - `AlertsController` (`/api/alerts`): lista alertas (`?vehicleId=`) e permite reconhecer (`POST /{id}/ack`)
   - `GET /api/vehicles/{id}/history?from=&to=`: histórico de posições por período (default últimas 24h, limite de 5000 pontos)
   - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, para suportar volume alto de séries temporais
+  - **Multi-tenant**: ASP.NET Core Identity + JWT. `AuthController` (`/api/auth/register`, `/api/auth/login`) cria/autentica usuários vinculados a uma `Company`; todos os outros controllers e o `PositionHub` (via grupos SignalR) filtram automaticamente pelo `CompanyId` da claim do token — cada empresa só vê seus próprios veículos, geofences e alertas
 - **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas). Útil para testar o `GpsTcpListenerService` sem hardware.
 - **frontend/rastreador-web** — React + Vite + TypeScript
   - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais)
@@ -61,6 +62,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - Painel de alertas em tempo real (SignalR) com reconhecimento
   - Gerenciador de geofences (criação via bounding box, listagem, remoção)
   - Histórico de rotas: busca por veículo/período, com playback animado no mapa (rota desenhada + marcador percorrendo o trajeto)
+  - Tela de login/cadastro de empresa; sessão (JWT) guardada no navegador, com logout
 
 ## Pré-requisitos
 
@@ -105,6 +107,12 @@ npm run dev
 Abre em `http://localhost:5173`.
 
 ## Uso
+
+### Primeiro acesso
+
+1. Abra o frontend e use a tela "Cadastre sua empresa" (nome da empresa + e-mail + senha) — isso cria a empresa e seu primeiro usuário.
+2. Faça login normalmente nas próximas vezes. O token JWT expira em 8h; expirado, a tela de login volta a aparecer automaticamente.
+3. **Atenção**: o `Jwt:Secret` em `appsettings.json` é um valor de desenvolvimento — troque por um segredo forte (variável de ambiente) antes de qualquer deploy real.
 
 ### Veículo simulado (sem hardware)
 
