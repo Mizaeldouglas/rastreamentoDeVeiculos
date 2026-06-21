@@ -4,12 +4,13 @@ namespace Rastreador.Api.Services.Gt06;
 
 /// <summary>
 /// Parser para o protocolo GT06 (e clones como TK103), usado por rastreadores GPS baratos comuns no Brasil.
-/// Suporta apenas os pacotes de login (0x01) e localização GPS (0x12), suficientes para um MVP de ingestão real.
+/// Suporta os pacotes de login (0x01), localização GPS (0x12) e status (0x13), suficientes para um MVP de ingestão real.
 /// </summary>
 public static class Gt06PacketParser
 {
     public const byte LoginProtocol = 0x01;
     public const byte LocationProtocol = 0x12;
+    public const byte StatusProtocol = 0x13;
 
     private static readonly byte[] StartBits = [0x78, 0x78];
     private static readonly byte[] StopBits = [0x0D, 0x0A];
@@ -97,6 +98,17 @@ public static class Gt06PacketParser
         if ((courseStatus & westFlag) != 0) longitude = -longitude;
 
         return new Gt06LocationPacket(timestamp, latitude, longitude, speed, course, serial);
+    }
+
+    /// <summary>
+    /// content: 1 byte de "terminal info". Simplificação: bit 0x02 representa o estado de ignição/ACC
+    /// (1 = ligado, 0 = desligado), convenção comum na família GT06.
+    /// </summary>
+    public static Gt06StatusPacket ParseStatus(ReadOnlySpan<byte> content, ushort serial)
+    {
+        const byte ignitionFlag = 0x02;
+        bool ignitionOn = (content[0] & ignitionFlag) != 0;
+        return new Gt06StatusPacket(ignitionOn, serial);
     }
 
     /// <summary>Monta o pacote de ACK enviado ao dispositivo após um login bem-sucedido.</summary>

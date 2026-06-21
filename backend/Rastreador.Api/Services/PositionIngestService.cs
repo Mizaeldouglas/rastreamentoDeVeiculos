@@ -75,6 +75,41 @@ public class PositionIngestService
         await EvaluateEventsAsync(db, vehicle, previousPosition, position, companyGroup, cancellationToken);
     }
 
+    public async Task IngestIgnitionAsync(
+        AppDbContext db,
+        int vehicleId,
+        bool ignitionOn,
+        DateTime timestampUtc,
+        CancellationToken cancellationToken)
+    {
+        var vehicle = await db.Vehicles.FindAsync([vehicleId], cancellationToken);
+        if (vehicle is null) return;
+
+        if (vehicle.IgnitionOn == ignitionOn) return; // sem mudança de estado — não duplica alerta
+
+        vehicle.IgnitionOn = ignitionOn;
+        await db.SaveChangesAsync(cancellationToken);
+
+        var lastPosition = await db.Positions
+            .Where(p => p.VehicleId == vehicleId)
+            .OrderByDescending(p => p.Timestamp)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var referencePosition = new Position
+        {
+            VehicleId = vehicleId,
+            Latitude = lastPosition?.Latitude ?? 0,
+            Longitude = lastPosition?.Longitude ?? 0,
+            Timestamp = timestampUtc
+        };
+
+        var companyGroup = PositionHub.CompanyGroup(vehicle.CompanyId);
+        var type = ignitionOn ? AlertType.IgnitionOn : AlertType.IgnitionOff;
+        var message = ignitionOn ? "Ignição ligada" : "Ignição desligada";
+
+        await RaiseAlertAsync(db, vehicle, type, message, referencePosition, companyGroup, cancellationToken);
+    }
+
     private async Task EvaluateEventsAsync(
         AppDbContext db,
         Vehicle vehicle,

@@ -4,7 +4,9 @@ public enum AlertType
 {
     GeofenceEnter,
     GeofenceExit,
-    SpeedLimitExceeded
+    SpeedLimitExceeded,
+    IgnitionOn,
+    IgnitionOff
 }
 
 public class Alert

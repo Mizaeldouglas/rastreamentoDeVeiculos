@@ -32,8 +32,20 @@ double heading = random.NextDouble() * 360;
 
 Console.WriteLine("Enviando posições simuladas a cada 3s (Ctrl+C para parar)...");
 
+bool ignitionOn = true;
+int tick = 0;
+const int ignitionToggleEveryNTicks = 6; // ~18s, alterna o estado do motor periodicamente
+
 while (true)
 {
+    if (tick > 0 && tick % ignitionToggleEveryNTicks == 0)
+    {
+        ignitionOn = !ignitionOn;
+        var statusPacket = BuildStatusPacket(ignitionOn, serial++);
+        await stream.WriteAsync(statusPacket);
+        Console.WriteLine($"Status enviado: ignição {(ignitionOn ? "ligada" : "desligada")}");
+    }
+
     heading = (heading + (random.NextDouble() - 0.5) * 30 + 360) % 360;
     double stepFraction = random.NextDouble();
     const double maxStepDegrees = 0.0015;
@@ -49,6 +61,7 @@ while (true)
 
     Console.WriteLine($"Posição enviada: lat={latitude:F6} lng={longitude:F6} speed={speed} heading={heading:F1}");
 
+    tick++;
     await Task.Delay(TimeSpan.FromSeconds(3));
 }
 
@@ -93,6 +106,15 @@ static byte[] BuildLocationPacket(DateTime utc, double latitude, double longitud
     BinaryPrimitives.WriteUInt16BigEndian(content.AsSpan(16, 2), courseStatus);
 
     return BuildPacket(protocolNumber: 0x12, content, serial);
+}
+
+static byte[] BuildStatusPacket(bool ignitionOn, ushort serial)
+{
+    var content = new byte[1];
+    const byte ignitionFlag = 0x02;
+    content[0] = ignitionOn ? ignitionFlag : (byte)0;
+
+    return BuildPacket(protocolNumber: 0x13, content, serial);
 }
 
 static byte[] BuildPacket(byte protocolNumber, byte[] content, ushort serial)

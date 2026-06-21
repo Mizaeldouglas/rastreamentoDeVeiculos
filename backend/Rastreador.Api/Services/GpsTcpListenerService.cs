@@ -134,6 +134,20 @@ public class GpsTcpListenerService : BackgroundService
 
             var location = Gt06PacketParser.ParseLocation(content, serial);
             await PersistAndBroadcastAsync(imei, location, stoppingToken);
+            return;
+        }
+
+        if (protocolNumber == Gt06PacketParser.StatusProtocol)
+        {
+            var imei = getImei();
+            if (imei is null)
+            {
+                _logger.LogWarning("Pacote de status recebido antes do login — ignorando");
+                return;
+            }
+
+            var status = Gt06PacketParser.ParseStatus(content, serial);
+            await PersistIgnitionAsync(imei, status, stoppingToken);
         }
     }
 
@@ -153,5 +167,21 @@ public class GpsTcpListenerService : BackgroundService
         await ingestService.IngestAsync(
             db, vehicle.Id, location.Latitude, location.Longitude, location.SpeedKmh, location.Course,
             location.TimestampUtc, stoppingToken);
+    }
+
+    private async Task PersistIgnitionAsync(string imei, Gt06StatusPacket status, CancellationToken stoppingToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var ingestService = scope.ServiceProvider.GetRequiredService<PositionIngestService>();
+
+        var vehicle = await db.Vehicles.FirstOrDefaultAsync(v => v.Imei == imei, stoppingToken);
+        if (vehicle is null)
+        {
+            _logger.LogWarning("Nenhum veículo cadastrado com o IMEI {Imei} — status descartado", imei);
+            return;
+        }
+
+        await ingestService.IngestIgnitionAsync(db, vehicle.Id, status.IgnitionOn, DateTime.UtcNow, stoppingToken);
     }
 }

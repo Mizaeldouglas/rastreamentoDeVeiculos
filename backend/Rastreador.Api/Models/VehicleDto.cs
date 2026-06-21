@@ -8,6 +8,7 @@ public class VehicleDto
     public string Driver { get; set; } = string.Empty;
     public string? Imei { get; set; }
     public double? SpeedLimitKmh { get; set; }
+    public bool? IgnitionOn { get; set; }
     public DateTime CreatedAt { get; set; }
     public PositionDto? LastPosition { get; set; }
 }

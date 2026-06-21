@@ -12,6 +12,7 @@ export interface VehicleDto {
   model: string;
   driver: string;
   imei: string | null;
+  ignitionOn: boolean | null;
   createdAt: string;
   lastPosition: PositionDto | null;
 }

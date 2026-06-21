@@ -19,6 +19,7 @@ export function VehicleList({ vehicles, onDelete }: Props) {
           <th>Modelo</th>
           <th>Motorista</th>
           <th>Origem</th>
+          <th>Ignição</th>
           <th>Velocidade</th>
           <th></th>
         </tr>
@@ -33,6 +34,15 @@ export function VehicleList({ vehicles, onDelete }: Props) {
               <span className={v.imei ? "badge badge-real" : "badge badge-sim"}>
                 {v.imei ? `Dispositivo real (${v.imei})` : "Simulado"}
               </span>
+            </td>
+            <td>
+              {v.ignitionOn === null ? (
+                <span className="badge badge-sim">—</span>
+              ) : (
+                <span className={v.ignitionOn ? "badge badge-real" : "badge badge-exit"}>
+                  {v.ignitionOn ? "Ligado" : "Desligado"}
+                </span>
+              )}
             </td>
             <td>{v.lastPosition ? `${v.lastPosition.speed} km/h` : "-"}</td>
             <td>

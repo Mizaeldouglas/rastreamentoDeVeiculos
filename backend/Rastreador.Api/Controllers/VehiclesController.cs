@@ -34,6 +34,7 @@ public class VehiclesController : ControllerBase
                 Driver = v.Driver,
                 Imei = v.Imei,
                 SpeedLimitKmh = v.SpeedLimitKmh,
+                IgnitionOn = v.IgnitionOn,
                 CreatedAt = v.CreatedAt,
                 LastPosition = v.Positions
                     .OrderByDescending(p => p.Timestamp)
@@ -80,6 +81,7 @@ public class VehiclesController : ControllerBase
             Driver = vehicle.Driver,
             Imei = vehicle.Imei,
             SpeedLimitKmh = vehicle.SpeedLimitKmh,
+            IgnitionOn = vehicle.IgnitionOn,
             CreatedAt = vehicle.CreatedAt,
             LastPosition = lastPosition
         });

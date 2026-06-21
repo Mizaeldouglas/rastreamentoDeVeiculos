@@ -24,7 +24,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 ### Motor de eventos
 - [x] Alerta de geofence (entrada/saída de área)
 - [x] Alerta de excesso de velocidade
-- [ ] Alerta de ignição (exigiria estender o parser GT06 para pacotes de status/alarme — hoje só tratamos login e localização)
+- [x] Alerta de ignição (pacote de status GT06 `0x13`, dispara `IgnitionOn`/`IgnitionOff` só na transição de estado)
 - [ ] Push notification real (hoje o alerta é broadcast em tempo real via SignalR para quem está com o painel aberto; falta um canal de push para fora do navegador, ex. mobile/e-mail)
 
 ### WebSocket + API REST
@@ -44,10 +44,10 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 ## Arquitetura
 
 - **backend/Rastreador.Api** — ASP.NET Core 8 Web API + EF Core (PostgreSQL + PostGIS + TimescaleDB) + SignalR
-  - `GpsTcpListenerService`: `TcpListener` na porta `5023` que aceita conexões de rastreadores reais (protocolo **GT06**, comum em rastreadores baratos no Brasil), faz login/ACK e persiste as posições recebidas
+  - `GpsTcpListenerService`: `TcpListener` na porta `5023` que aceita conexões de rastreadores reais (protocolo **GT06**, comum em rastreadores baratos no Brasil), faz login/ACK, persiste posições e processa pacotes de status (ignição/ACC)
   - `GpsSimulatorService`: gera posições simuladas a cada ~3s, apenas para veículos **sem IMEI** cadastrado (não conflita com dispositivos reais)
   - `PositionIngestService`: ponto único de persistência + broadcast + motor de eventos, usado tanto pelo simulador quanto pela ingestão real
-  - Motor de eventos: dispara `Alert` quando o veículo excede o `SpeedLimitKmh` configurado, ou entra/sai de uma `Geofence` (polígono PostGIS, checado com `NetTopologySuite`)
+  - Motor de eventos: dispara `Alert` quando o veículo excede o `SpeedLimitKmh` configurado, entra/sai de uma `Geofence` (polígono PostGIS, checado com `NetTopologySuite`), ou liga/desliga a ignição (`Vehicle.IgnitionOn`, atualizado só na transição de estado para não duplicar alertas)
   - `PositionHub` (`/hubs/positions`): transmite posições (`PositionUpdated`) e alertas (`AlertTriggered`) em tempo real via SignalR
   - `VehiclesController` (`/api/vehicles`): CRUD de veículos (`Imei`, `SpeedLimitKmh` opcionais)
   - `GeofencesController` (`/api/geofences`): CRUD de geofences (polígono via lista de pontos `{lat,lng}`)
@@ -55,9 +55,9 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - `GET /api/vehicles/{id}/history?from=&to=`: histórico de posições por período (default últimas 24h, limite de 5000 pontos)
   - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, para suportar volume alto de séries temporais
   - **Multi-tenant**: ASP.NET Core Identity + JWT. `AuthController` (`/api/auth/register`, `/api/auth/login`) cria/autentica usuários vinculados a uma `Company`; todos os outros controllers e o `PositionHub` (via grupos SignalR) filtram automaticamente pelo `CompanyId` da claim do token — cada empresa só vê seus próprios veículos, geofences e alertas
-- **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas). Útil para testar o `GpsTcpListenerService` sem hardware.
+- **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas + pacotes de status que alternam a ignição a cada ~18s). Útil para testar o `GpsTcpListenerService` sem hardware.
 - **frontend/rastreador-web** — React + Vite + TypeScript
-  - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais)
+  - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais), com badge de estado de ignição (Ligado/Desligado/—)
   - Mapa (Leaflet/OpenStreetMap) com marcadores em tempo real e geofences desenhadas como polígonos
   - Painel de alertas em tempo real (SignalR) com reconhecimento
   - Gerenciador de geofences (criação via bounding box, listagem, remoção)

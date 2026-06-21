@@ -9,3 +9,5 @@ public record Gt06LocationPacket(
     double SpeedKmh,
     double Course,
     ushort Serial);
+
+public record Gt06StatusPacket(bool IgnitionOn, ushort Serial);
