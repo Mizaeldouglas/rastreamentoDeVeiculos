@@ -39,7 +39,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
 
 ### Outros (fora do diagrama original, mas relevantes)
 - [x] Autenticação e multi-tenant (login por empresa via JWT, dados isolados por `CompanyId`)
-- [ ] Testes automatizados
+- [x] Testes automatizados (xUnit no backend — parser GT06 e motor de eventos; Vitest no frontend)
 
 ## Arquitetura
 
@@ -58,6 +58,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - **Push notifications**: `PushController` (`/api/push/vapid-public-key`, `/api/push/subscribe`) + `PushNotificationService` (biblioteca `WebPush`, protocolo VAPID). Toda vez que um alerta é disparado, o `PositionIngestService` também envia uma notificação push para os navegadores inscritos da empresa — falha de entrega (ex. subscription expirada) é capturada e nunca derruba o fluxo principal do alerta
   - **Relatórios**: `GET /api/alerts/report/pdf?from=&to=` (QuestPDF, licença Community) e `GET /api/vehicles/{id}/history/report/excel?from=&to=` (ClosedXML)
 - **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas + pacotes de status que alternam a ignição a cada ~18s). Útil para testar o `GpsTcpListenerService` sem hardware.
+- **backend/Rastreador.Api.Tests** — xUnit + EF Core InMemory + Moq. `Gt06PacketParserTests` (parsing de login/localização/status, validação de CRC), `PositionIngestServiceTests` (geofence enter/exit, limite de velocidade, ignição sem duplicar alerta), `ClaimsPrincipalExtensionsTests`
 - **frontend/rastreador-web** — React + Vite + TypeScript
   - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais), com badge de estado de ignição (Ligado/Desligado/—)
   - Mapa (Leaflet/OpenStreetMap) com marcadores em tempo real e geofences desenhadas como polígonos
@@ -67,6 +68,7 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - Tela de login/cadastro de empresa; sessão (JWT) guardada no navegador, com logout
   - Botão "Ativar notificações" — registra um service worker (`public/sw.js`) e assina o navegador para receber Web Push
   - Botões "Exportar PDF" (alertas) e "Exportar Excel" (histórico do veículo selecionado)
+  - Vitest + React Testing Library (`VehicleList.test.tsx`) — infraestrutura de teste pronta para crescer
 
 ## Pré-requisitos
 
@@ -109,6 +111,13 @@ npm run dev
 ```
 
 Abre em `http://localhost:5173`.
+
+### 4. Testes
+
+```bash
+cd backend/Rastreador.Api.Tests && dotnet test
+cd frontend/rastreador-web && npm run test
+```
 
 ## Uso
 
