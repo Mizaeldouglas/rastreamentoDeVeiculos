@@ -1,0 +1,6 @@
+@Rastreador.Api_HostAddress = http://localhost:5003
+
+GET {{Rastreador.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
