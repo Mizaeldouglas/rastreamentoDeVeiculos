@@ -12,6 +12,7 @@ interface Props {
   geofences?: GeofenceDto[];
   historyRoute?: LatLngDto[];
   historyMarker?: LatLngDto | null;
+  height?: string;
 }
 
 const vehicleIcon = new L.Icon({
@@ -31,7 +32,13 @@ const historyIcon = new L.Icon({
 
 const DEFAULT_CENTER: [number, number] = [-23.5505, -46.6333];
 
-export function MapView({ vehicles, geofences = [], historyRoute = [], historyMarker = null }: Props) {
+export function MapView({
+  vehicles,
+  geofences = [],
+  historyRoute = [],
+  historyMarker = null,
+  height = "500px",
+}: Props) {
   const [positions, setPositions] = useState<Record<number, PositionUpdatedEvent>>({});
   const connectionRef = useRef<ReturnType<typeof createPositionConnection> | null>(null);
 
@@ -75,7 +82,7 @@ export function MapView({ vehicles, geofences = [], historyRoute = [], historyMa
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={13}
-        style={{ height: "500px", width: "100%" }}
+        style={{ height, width: "100%" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -97,7 +104,7 @@ export function MapView({ vehicles, geofences = [], historyRoute = [], historyMa
           <Polygon
             key={geofence.id}
             positions={geofence.points.map((p) => [p.lat, p.lng])}
-            pathOptions={{ color: "#2563eb", weight: 2, fillOpacity: 0.1 }}
+            pathOptions={{ color: "#4f46e5", weight: 2, fillOpacity: 0.1 }}
           >
             <Popup>{geofence.name}</Popup>
           </Polygon>

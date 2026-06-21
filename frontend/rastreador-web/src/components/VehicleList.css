@@ -22,7 +22,7 @@
 }
 
 .vehicle-table tbody tr:hover {
-  background-color: #eef2ff;
+  background-color: var(--color-primary-soft);
 }
 
 .empty-state {
@@ -40,11 +40,11 @@
 }
 
 .badge-real {
-  background: #dcfce7;
+  background: var(--color-success-soft);
   color: #15803d;
 }
 
 .badge-sim {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }

@@ -19,9 +19,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #f8fafc;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
   font-size: 14px;
 }
 
@@ -39,16 +39,16 @@
 }
 
 .badge-enter {
-  background: #dcfce7;
+  background: var(--color-success-soft);
   color: #15803d;
 }
 
 .badge-exit {
-  background: #fef3c7;
+  background: var(--color-warning-soft);
   color: #b45309;
 }
 
 .badge-speed {
-  background: #fee2e2;
+  background: var(--color-danger-soft);
   color: var(--color-danger);
 }

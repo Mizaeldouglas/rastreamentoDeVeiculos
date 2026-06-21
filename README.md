@@ -53,21 +53,25 @@ Rastreador GPS → TCP Listener → Processamento → Motor de eventos → WebSo
   - `GeofencesController` (`/api/geofences`): CRUD de geofences (polígono via lista de pontos `{lat,lng}`)
   - `AlertsController` (`/api/alerts`): lista alertas (`?vehicleId=`) e permite reconhecer (`POST /{id}/ack`)
   - `GET /api/vehicles/{id}/history?from=&to=`: histórico de posições por período (default últimas 24h, limite de 5000 pontos)
-  - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, para suportar volume alto de séries temporais
+  - `Positions` é uma **hypertable do TimescaleDB**, particionada por `Timestamp`, com **compressão automática** (chunks com mais de 7 dias) e **retenção** (descarta posições brutas com mais de 180 dias) — controla o crescimento do banco em produção
   - **Multi-tenant**: ASP.NET Core Identity + JWT. `AuthController` (`/api/auth/register`, `/api/auth/login`) cria/autentica usuários vinculados a uma `Company`; todos os outros controllers e o `PositionHub` (via grupos SignalR) filtram automaticamente pelo `CompanyId` da claim do token — cada empresa só vê seus próprios veículos, geofences e alertas
   - **Push notifications**: `PushController` (`/api/push/vapid-public-key`, `/api/push/subscribe`) + `PushNotificationService` (biblioteca `WebPush`, protocolo VAPID). Toda vez que um alerta é disparado, o `PositionIngestService` também envia uma notificação push para os navegadores inscritos da empresa — falha de entrega (ex. subscription expirada) é capturada e nunca derruba o fluxo principal do alerta
   - **Relatórios**: `GET /api/alerts/report/pdf?from=&to=` (QuestPDF, licença Community) e `GET /api/vehicles/{id}/history/report/excel?from=&to=` (ClosedXML)
 - **backend/Rastreador.DeviceSimulator** — console app que simula um rastreador físico de verdade, falando o protocolo GT06 via TCP (login + posições periódicas + pacotes de status que alternam a ignição a cada ~18s). Útil para testar o `GpsTcpListenerService` sem hardware.
 - **backend/Rastreador.Api.Tests** — xUnit + EF Core InMemory + Moq. `Gt06PacketParserTests` (parsing de login/localização/status, validação de CRC), `PositionIngestServiceTests` (geofence enter/exit, limite de velocidade, ignição sem duplicar alerta), `ClaimsPrincipalExtensionsTests`
-- **frontend/rastreador-web** — React + Vite + TypeScript
+- **frontend/rastreador-web** — React + Vite + TypeScript + React Router
+  - **Multi-página com sidebar**: Dashboard, Veículos, Mapa, Geofences, Histórico, Alertas — cada uma em sua própria rota (`AppLayout` + `Sidebar`), em vez de uma tela única
+  - **Dashboard** (`/dashboard`): cards de métricas (veículos cadastrados, em movimento, com ignição ligada, online nos últimos 5 min, alertas nas últimas 24h, alertas não reconhecidos) + mini-mapa da frota + lista dos alertas pendentes — combina visão geral da frota com foco em segurança
+  - `FleetDataContext`/`useFleetData()`: centraliza o polling de veículos/geofences (antes duplicado), compartilhado entre todas as páginas
   - Cadastro/listagem de veículos (placa, modelo, motorista, IMEI e limite de velocidade opcionais), com badge de estado de ignição (Ligado/Desligado/—)
-  - Mapa (Leaflet/OpenStreetMap) com marcadores em tempo real e geofences desenhadas como polígonos
+  - Mapa em tela cheia (Leaflet/OpenStreetMap) com marcadores em tempo real e geofences desenhadas como polígonos
   - Painel de alertas em tempo real (SignalR) com reconhecimento
   - Gerenciador de geofences (criação via bounding box, listagem, remoção)
   - Histórico de rotas: busca por veículo/período, com playback animado no mapa (rota desenhada + marcador percorrendo o trajeto)
   - Tela de login/cadastro de empresa; sessão (JWT) guardada no navegador, com logout
   - Botão "Ativar notificações" — registra um service worker (`public/sw.js`) e assina o navegador para receber Web Push
   - Botões "Exportar PDF" (alertas) e "Exportar Excel" (histórico do veículo selecionado)
+  - Identidade visual redesenhada: paleta índigo + sidebar slate escura, ícones `lucide-react`, cards com mais respiro
   - Vitest + React Testing Library (`VehicleList.test.tsx`) — infraestrutura de teste pronta para crescer
 
 ## Pré-requisitos
